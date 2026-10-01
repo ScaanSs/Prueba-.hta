@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>OP Auto Clicker 4.1</title>
+<HTA:APPLICATION 
+    ID="oAutoClicker"
+    APPLICATIONNAME="OP Auto Clicker 4.1"
+    BORDER="thin"
+    BORDERSTYLE="normal"
+    CAPTION="yes"
+    MAXIMIZEBUTTON="no"
+    MINIMIZEBUTTON="yes"
+    SCROLL="no"
+    SINGLEINSTANCE="yes"
+    WINDOWSTATE="normal"
+/>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        background-color: #f0f0f0;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        font-size: 14px;
+        margin: 8px;
+        color: #1a1a1a;
+        user-select: none;
+    }
+    fieldset {
+        border: 1px solid #dcdcdc;
+        background-color: #f0f0f0;
+        padding: 8px 8px 12px 8px;
+        margin: 0 0 13px 0;
+        border-radius: 6px;
+    }
+    legend {
+        padding: 0 4px;
+        color: #1a1a1a;
+        font-size: 14px;
+    }
+    .row {
+        zoom: 1;
+        margin-bottom: 5px;
+    }
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    .col-left { float: left; }
+    .col-right { float: right; }
+
+    input[type="text"], input[type="number"], select {
+        border: 1px solid #646464;
+        border-radius: 4px;
+        background-color: #fff;
+        padding: 0 6px;
+        height: 23px;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        font-size: 14px;
+        color: #1a1a1a;
+    }
+    input[type="number"] {
+        text-align: right;
+    }
+    select {
+        background: #fff;
+    }
+
+    .btn {
+        background-color: #ffffff;
+        border: 1px solid #c2c2c2;
+        border-radius: 6px;
+        height: 33px;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        font-size: 14px;
+        color: #1a1a1a;
+        cursor: pointer;
+        text-align: center;
+    }
+    .btn:hover {
+        background-color: #f5f9fd;
+        border-color: #0078d7;
+    }
+
+    /* Anchos idénticos */
+    .w-time { width: 53px; }
+    .w-ms { width: 53px; }
+    .w-rand { width: 53px; }
+    .w-repeat { width: 53px; }
+    .w-pos { width: 53px; }
+    .select-box { width: 108px; height: 23px; }
+
+    .columns-container {
+        width: 100%;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+    .column-half {
+        width: 48%;
+        float: left;
+    }
+    .column-half.right {
+        float: right;
+    }
+
+    .btn-grid-2 {
+        width: 100%;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+    .btn-grid-2 button {
+        width: 48%;
+        float: left;
+    }
+    .btn-grid-2 button.right-btn {
+        float: right;
+    }
+
+    /* --- Controles personalizados --- */
+    .radio, .chk {
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid #767676;
+        background: #fff;
+        display: inline-block;
+        position: relative;
+        cursor: pointer;
+        vertical-align: middle;
+    }
+    .radio { border-radius: 50%; }
+    .chk { border-radius: 3px; }
+    .radio.checked, .chk.checked {
+        border-color: #005fb8;
+    }
+    .chk.checked { background: #005fb8; }
+    .radio.checked:after {
+        content: '';
+        position: absolute;
+        left: 3px; top: 3px;
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: #005fb8;
+    }
+    .chk.checked:after {
+        content: '';
+        position: absolute;
+        left: 3px; top: 0px;
+        width: 4px; height: 8px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    .opt-label { margin-left: 6px; margin-right: 10px; cursor: pointer; vertical-align: middle; }
+</style>
+
+<script language="VBScript">
+    Dim wshShell
+    Set wshShell = CreateObject("WScript.Shell")
+    
+    Sub DoClick(btn, clickType)
+        ' Simulación básica segura mediante WScript
+        On Error Resume Next
+        wshShell.SendKeys "{ENTER}"
+    End Sub
+</script>
+
+<script language="javascript">
+    var timer = null;
+    var running = false;
+    var clicksPerformed = 0;
+    var currentHotkey = 117; // F6
+    var repeatMode = "untilStop";
+
+    window.resizeTo(484, 431);
+
+    function setRadio(el, group, value) {
+        var nodes = document.getElementsByTagName('span');
+        for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].getAttribute('data-group') === group) {
+                nodes[i].className = nodes[i].className.replace('checked', '').trim();
+            }
+        }
+        el.className += ' checked';
+        if (group === "repeatGroup") { repeatMode = value; }
+    }
+
+    function toggleChk(el) {
+        if (el.className.indexOf('checked') !== -1) {
+            el.className = el.className.replace('checked', '').trim();
+        } else {
+            el.className += ' checked';
+        }
+    }
+
+    function calculateInterval() {
+        var hrs = parseInt(document.getElementById("hrs").value) || 0;
+        var mins = parseInt(document.getElementById("mins").value) || 0;
+        var secs = parseInt(document.getElementById("secs").value) || 0;
+        var ms = parseInt(document.getElementById("ms").value) || 100;
+        var total = (hrs * 3600000) + (mins * 60000) + (secs * 1000) + ms;
+        return total < 10 ? 10 : total;
+    }
+
+    function toggleClicker() {
+        if (!running) {
+            startClicking();
+        } else {
+            stopClicking();
+        }
+    }
+
+    function startClicking() {
+        running = true;
+        clicksPerformed = 0;
+        document.getElementById("btnStart").disabled = true;
+        document.getElementById("btnStop").disabled = false;
+
+        var baseInterval = calculateInterval();
+        var useRandom = document.getElementById("chkRandom").className.indexOf("checked") !== -1;
+        var randomOffset = parseInt(document.getElementById("randomMs").value) || 0;
+        var btn = document.getElementById("mouseBtn").value;
+        var cType = document.getElementById("clickType").value;
+        var repeatUntilStop = (repeatMode === "untilStop");
+        var maxRepeat = parseInt(document.getElementById("repeatTimes").value) || 1;
+
+        function step() {
+            if (!running) return;
+            try {
+                DoClick(btn, cType);
+                clicksPerformed++;
+            } catch(e) {}
+
+            if (!repeatUntilStop && clicksPerformed >= maxRepeat) {
+                stopClicking();
+                return;
+            }
+
+            var nextInterval = baseInterval;
+            if (useRandom && randomOffset > 0) {
+                var offset = (Math.random() * randomOffset * 2) - randomOffset;
+                nextInterval = Math.max(10, Math.round(baseInterval + offset));
+            }
+            timer = setTimeout(step, nextInterval);
+        }
+        step();
+    }
+
+    function stopClicking() {
+        running = false;
+        if (timer) clearTimeout(timer);
+        document.getElementById("btnStart").disabled = false;
+        document.getElementById("btnStop").disabled = true;
+    }
+
+    document.onkeydown = function() {
+        if (window.event.keyCode === currentHotkey) {
+            toggleClicker();
+        }
+    };
+</script>
+</head>
+<body>
+
+    <!-- Click interval -->
+    <fieldset>
+        <legend>Click interval</legend>
+        <div class="row">
+            <div class="col-left"><input type="number" id="hrs" value="0" class="w-time"> hours</div>
+            <div class="col-left" style="margin-left: 10px;"><input type="number" id="mins" value="0" class="w-time"> mins</div>
+            <div class="col-left" style="margin-left: 10px;"><input type="number" id="secs" value="0" class="w-time"> secs</div>
+            <div class="col-right"><input type="number" id="ms" value="100" class="w-ms"> milliseconds</div>
+        </div>
+        <div class="row" style="margin-top: 8px;">
+            <span id="chkRandom" class="chk" onclick="toggleChk(this)"></span>
+            <span class="opt-label" onclick="toggleChk(document.getElementById('chkRandom'))">Random offset + -</span>
+            <input type="number" id="randomMs" value="40" class="w-rand"> milliseconds
+        </div>
+    </fieldset>
+
+    <!-- Click options / Click repeat -->
+    <div class="columns-container">
+        <div class="column-half">
+            <fieldset style="height: 87px;">
+                <legend>Click options</legend>
+                <div class="row" style="margin-bottom: 8px;">
+                    <span class="col-left">Mouse button:</span>
+                    <select id="mouseBtn" class="select-box col-right">
+                        <option value="Left">Left</option>
+                        <option value="Right">Right</option>
+                        <option value="Middle">Middle</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <span class="col-left">Click type:</span>
+                    <select id="clickType" class="select-box col-right">
+                        <option value="Single">Single</option>
+                        <option value="Double">Double</option>
+                    </select>
+                </div>
+            </fieldset>
+        </div>
+        <div class="column-half right">
+            <fieldset style="height: 87px;">
+                <legend>Click repeat</legend>
+                <div class="row" style="margin-bottom: 8px;">
+                    <span class="radio" data-group="repeatGroup" onclick="setRadio(this,'repeatGroup','count')"></span>
+                    <span class="opt-label" onclick="setRadio(document.querySelector('.radio[data-group=repeatGroup]'),'repeatGroup','count')">Repeat</span>
+                    <input type="number" id="repeatTimes" value="1" class="w-repeat"> times
+                </div>
+                <div class="row">
+                    <span class="radio checked" data-group="repeatGroup" onclick="setRadio(this,'repeatGroup','untilStop')"></span>
+                    <span class="opt-label">Repeat until stopped</span>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+
+    <!-- Cursor position -->
+    <fieldset style="height: 67px;">
+        <legend>Cursor position</legend>
+        <div class="row">
+            <span class="radio checked" data-group="posGroup" onclick="setRadio(this,'posGroup','current')"></span>
+            <span class="opt-label">Current location</span>
+
+            <span class="radio" data-group="posGroup" onclick="setRadio(this,'posGroup','pick')" style="margin-left: 10px;"></span>
+            <button class="btn" style="width: auto; padding: 0 10px; height: 26px; vertical-align: middle;" onclick="alert('Pick location requiere integración nativa.')">Pick location</button>
+
+            <span class="col-right"><input type="number" id="posY" value="0" class="w-pos"></span>
+            <span class="col-right" style="margin-right: 4px; line-height: 23px;">Y</span>
+            <span class="col-right"><input type="number" id="posX" value="0" class="w-pos" style="margin-right: 8px;"></span>
+            <span class="col-right" style="margin-right: 4px; line-height: 23px;">X</span>
+        </div>
+    </fieldset>
+
+    <!-- Botones inferiores -->
+    <div class="btn-grid-2">
+        <button id="btnStart" class="btn" onclick="startClicking()">Start (F6)</button>
+        <button id="btnStop" class="btn right-btn" onclick="stopClicking()" disabled>Stop (F6)</button>
+    </div>
+    <div class="btn-grid-2">
+        <button class="btn" onclick="alert('Hotkey predeterminado: F6')">Hotkey setting</button>
+        <button class="btn right-btn" onclick="alert('Record _Playback no disponible.')">Record _Playback</button>
+    </div>
+
+</body>
+</html>
